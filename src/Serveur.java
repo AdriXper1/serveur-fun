@@ -1,32 +1,26 @@
+package src;
+
 import java.util.ArrayList;
 import java.net.*;
 
 public class Serveur {
 
+	//-----------------------//
+	//fonctionnement generale//
+	//-----------------------//
+
 	/** le port auquel le client va se connecter */
-	private int port;
+	private final int port;
 	/** le nom du serveur */
-	private String nom;
+	private final String nom;
 	/** l'adresse du serveur */
-	private String adresse;
+	private final String adresse;
 
 	/** tous les messages envoyés depuis le démarrage */
 	private String chat = "";
 
 	/** tableau contenant les clients connectés */
 	private ArrayList<Client>clients = new ArrayList<Client>();
-
-	/** double pour doubler */
-	private long doubler = 1;
-
-	/** commande /help */
-	private String help =	"/c\t	Utilisateurs connectés\n" +
-							"/pig\t	Affiche un cochon\n" +
-							"/db\t	Double la valeur\n" +
-							"/help\t	Affiche cette aide\n\n" +
-							"Veuillez respecter les règles de politesse :\n" +
-							"Bonjour, merci, s'il vous plaît, et au revoir.\n" +
-							"Restez respectueux envers les autres utilisateurs.";
 
 	/** Démarrage du serveur avec le port et le nom */
 	public Serveur (int port, String nom)
@@ -134,6 +128,22 @@ public class Serveur {
 		return this.chat;
 	}
 
+	//-----------------//
+	//commandes de chat//
+	//-----------------//
+
+	/** commande /help */
+	private String help =	"/c\t	Utilisateurs connectés\n" +
+							"/pig\t	Affiche un cochon\n" +
+							"/db\t	Double la valeur\n" +
+							"/help\t	Affiche cette aide\n\n" +
+							"Rester simpat\n" +
+							"Bonjour, merci, s'il vous plaît, et au revoir.\n" +
+							"Restez respectueux envers les autres utilisateurs.";
+
+	/** double pour doubler */
+	private long doubler = 1;
+
 	/** Envoie le message aux classes extérieures et vérifie si le message est une commande. Si oui, l'exécute */
 	public String lookupCommand(String message, Client client)
 	{
@@ -185,6 +195,6 @@ public class Serveur {
 	}
 
 	public static void main(String[] args) {
-		new Serveur(9002, "Serveur SAE");
+		new Serveur(9002, "serveur chat IUT info");
 	}
 }
