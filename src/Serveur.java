@@ -71,14 +71,6 @@ public class Serveur {
 		sendNewMessage(cleanMessage);
 	}
 
-	/** Envoie directement un message à tous les clients et au serveur */
-	public void sendNewMessage(String message)
-	{
-		System.out.println(message);
-		chat += "\n" + message;
-		toAllClient(message);
-	}
-
 	/** change les couleurs et ajout un surnom*/
 	public String clean(String message, Client client)
 	{
@@ -89,12 +81,20 @@ public class Serveur {
 
 		message = message.replaceAll("^\\(localhost\\)", "\u001B[31m(localhost)")
 		                 .replaceAll("^SERVEUR", "\u001B[32mSERVEUR");
-		
+
 		message = message += "\u001B[0m";
-		
+
 		return message;
 	}
-	
+
+	/** Envoie directement un message à tous les clients et au serveur */
+	public void sendNewMessage(String message)
+	{
+		System.out.println(message);
+		chat += "\n" + message;
+		toAllClient(message);
+	}
+
 	/** Envoie un message au serveur */
 	public void toServeur(String message)
 	{

@@ -8,49 +8,49 @@ import java.net.*;
 public class Client extends Thread 
 {
 	
-	private Serveur serveur;
-	private Socket  client;
+	private final Serveur serveur;
+	private final Socket  client;
 
 	private String  adresse;
 	private String  nom;
 
-	private PrintWriter    out;
-	private BufferedReader in;
+	private PrintWriter    printer;
+	private BufferedReader sender;
 
 	public Client (Serveur serveur, Socket client)
 	{
 		this.serveur = serveur;
-		this.client = client;
+		this.client  = client;
 	}
 	
 	public void run() //code executer automatiquement dans chaque thread
 	{
 		try
 		{
-			out = new PrintWriter   (client.getOutputStream(), true     ); // Envoyer
-			in  = new BufferedReader(new InputStreamReader(client.getInputStream())); // Recevoir 
+			printer = new PrintWriter   (client.getOutputStream(), true); // Envoyer
+			sender  = new BufferedReader(new InputStreamReader(client.getInputStream())); // Recevoir
 
 			adresse = client.getInetAddress().getHostName();
 
-			out.println("Bienvenue sur le serveur " + serveur.getNom());
+			printer.println("Bienvenue sur le serveur " + serveur.getNom());
 
 			/* Demande et Récupération du pseudo de l'utilisateur  */
-			out.println("Entrez votre pseudo : ");
-			nom = in.readLine();
+			printer.println("Entrez votre pseudo : ");
+			nom = sender.readLine();
 
 			/* Vérification de longueur du pseudo */
 			while (nom.length() > 20)
 			{
-				out.println("Votre pseudo dépasse la limite de 20 caractères ");
-				nom = in.readLine();
+				printer.println("Pseudo trop long, max 20 caractères");
+				nom = sender.readLine();
 			}
 
 			/* On récupère l'historique du chat */
-			out.println(serveur.getHistoriqueChat());
+			printer.println(serveur.getHistoriqueChat());
 			serveur.getNewMessage(getAdresseNom() + " s'est connecté", null);
 
 			String message;
-			while ((message = in.readLine()) != null)
+			while ((message = sender.readLine()) != null)
 			{
 				serveur.getNewMessage(message, this);
 			}
@@ -66,7 +66,7 @@ public class Client extends Thread
 	/** envoie un message au client */
 	public void toClient(String message)
 	{
-		this.out.println(message);
+		this.printer.println(message);
 	}
 
 	/** renvoie l'adresse du client */
@@ -75,13 +75,11 @@ public class Client extends Thread
 		return adresse;
 	}
 
-
 	/** renvoie le nom du client */
 	public String getNom()
 	{
 		return nom;
 	}
-
 
 	/** renvoie l'adresse et le nom de façon propre */
 	public String getAdresseNom()
@@ -89,7 +87,7 @@ public class Client extends Thread
 		return ("(" + adresse.replace(".iut.univ-lehavre.fr", "") + ") " + nom);
 	}
 
-	/** renvoie la socket client */
+	/** renvoie le socket client */
 	public Socket getSocket()
 	{
 		return this.client;
@@ -98,7 +96,7 @@ public class Client extends Thread
 	/** renvoie le BufferedReader du client */
 	public BufferedReader getBufferedReader()
 	{
-		return this.in;
+		return this.sender;
 	}
 
 	/** déconnecte le client correctement */
@@ -107,7 +105,7 @@ public class Client extends Thread
 		try
 		{
 			this.serveur.deconnecte(this);
-			this.out.close();
+			this.printer.close();
 			this.client.close();
 			this.serveur.getNewMessage(getNom() + " s'est déconnecté", null);
 		}
