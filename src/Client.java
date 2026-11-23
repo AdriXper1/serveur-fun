@@ -17,16 +17,13 @@ public class Client extends Thread
 	private PrintWriter    printer;
 	private BufferedReader sender;
 
-	public Client (Serveur serveur, Socket client)
-	{
+	public Client (Serveur serveur, Socket client) {
 		this.serveur = serveur;
 		this.client  = client;
 	}
-	
-	public void run() //code executer automatiquement dans chaque thread
-	{
-		try
-		{
+
+	public void run() {
+		try {
 			printer = new PrintWriter   (client.getOutputStream(), true); // Envoyer
 			sender  = new BufferedReader(new InputStreamReader(client.getInputStream())); // Recevoir
 
@@ -34,83 +31,82 @@ public class Client extends Thread
 
 			printer.println("Bienvenue sur le serveur " + serveur.getNom());
 
-			/* Demande et Récupération du pseudo de l'utilisateur  */
+			if (adresse.equals("localhost")) {
+				printer.println("entrer le mot de passe localhost");
+				String psw = sender.readLine();
+
+				while (!serveur.checkPassworld(psw)) {
+					printer.println("mauvais mot de passe");
+					psw = sender.readLine();
+				}
+			}
+
 			printer.println("Entrez votre pseudo : ");
 			nom = sender.readLine();
 
-			/* Vérification de longueur du pseudo */
-			while (nom.length() > 20)
-			{
+			while (nom.length() > 20) {
 				printer.println("Pseudo trop long, max 20 caractères");
 				nom = sender.readLine();
 			}
 
-			/* On récupère l'historique du chat */
 			printer.println(serveur.getHistoriqueChat());
 			serveur.getNewMessage(getAdresseNom() + " s'est connecté", null);
 
 			String message;
 			while ((message = sender.readLine()) != null)
 			{
+				deletInpute(message);
 				serveur.getNewMessage(message, this);
 			}
 
 			deconnecte();
 		}
-		catch(Exception e)
-		{
+		catch(Exception e) {
 			System.err.println(e);
 		}
 	}
 
-	/** envoie un message au client */
-	public void toClient(String message)
-	{
-		this.printer.println(message);
+	//todo faire marcher cette merde
+	private void deletInpute (String message) {
+		printer.print((char)8);
+		for (int i = message.length(); i > 0; i--) {
+			printer.print((char)8);
+		}
 	}
 
-	/** renvoie l'adresse du client */
-	public String getAdresse()
-	{
+	public void toClient(String message) {
+		printer.println(message);
+	}
+
+	public String getAdresse() {
 		return adresse;
 	}
 
-	/** renvoie le nom du client */
-	public String getNom()
-	{
+	public String getNom() {
 		return nom;
 	}
 
-	/** renvoie l'adresse et le nom de façon propre */
-	public String getAdresseNom()
-	{
+	public String getAdresseNom() {
 		return ("(" + adresse.replace(".iut.univ-lehavre.fr", "") + ") " + nom);
 	}
 
-	/** renvoie le socket client */
-	public Socket getSocket()
-	{
-		return this.client;
+	public Socket getSocket() {
+		return client;
 	}
 
-	/** renvoie le BufferedReader du client */
-	public BufferedReader getBufferedReader()
-	{
-		return this.sender;
+	public BufferedReader getBufferedReader() {
+		return sender;
 	}
 
-	/** déconnecte le client correctement */
-	public void deconnecte()
-	{
-		try
-		{
-			this.serveur.deconnecte(this);
-			this.printer.close();
-			this.client.close();
-			this.serveur.getNewMessage(getNom() + " s'est déconnecté", null);
+	public void deconnecte() {
+		try {
+			printer.close();
+			sender.close();
+			client.close();
+			serveur.deconnecte(this);
+			serveur.getNewMessage(getNom() + " s'est déconnecté", null);
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			System.err.println(e);
 		}
 	}
