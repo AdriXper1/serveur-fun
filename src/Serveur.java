@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.net.*;
+import java.util.Calendar;
 
 public class Serveur {
 
@@ -51,7 +53,7 @@ public class Serveur {
 		{
 			try {
 				socket = serverSocket.accept();
-				System.out.println("\u001B[97mINFO: client " + socket.getInetAddress().getHostName() + " s'est connecté\u001B[0m");
+				System.out.println(setColor("INFO: client " + socket.getInetAddress().getHostName() + " s'est connecté", 'w'));
 			}
 			catch (Exception e) {System.err.println(e);}
 
@@ -69,27 +71,33 @@ public class Serveur {
 		}
 	}
 
-	public void getNewMessage (String message, Client client) {
+	public void getNewMessage (String message, Client client){
 		//interdie les caratères spéciaux
-		if (!message.chars().allMatch(c -> c > 31)) return;
+		if (!message.chars().allMatch(c -> c > 31) || message.isEmpty()) return;
 
 		String cleanMessage = clean(message, client);
 
 		sendNewMessage(cleanMessage);
 	}
 
-	public String clean (String message, Client client) {
+	public String clean (String message, Client client){
 		message = lookupCommand(message, client);
 
-		if (client == null) message = "SERVEUR: " + message;
-		else                message = (client.getAdresseNom() + ": " + message);
+		if (client == null) {
+			message = setColor("SERVEUR: " + message, 'g');
+		}
+		else if (client.getAdresse().equals("localhost")) {
+			message = setColor(client.getAdresseNom() + ": " + message, 'r');
+		}
 
-		message = message.replaceAll("^\\(localhost\\)", "\u001B[31m(localhost)")
-		                 .replaceAll("^SERVEUR", "\u001B[32mSERVEUR");
-
-		message = message += "\u001B[0m";
+		message = addTimeStamp(message);
 
 		return message;
+	}
+
+	private String addTimeStamp (String message) {
+		String timeStamp = new SimpleDateFormat("dd/MM/yy HH:mm ").format(Calendar.getInstance().getTime());
+		return timeStamp + message;
 	}
 
 	public String setColor(String message, char color) {
@@ -166,15 +174,19 @@ public class Serveur {
 
 	private long doubler = 1;
 
-	public String lookupCommand (String message, Client client) {
+	public String lookupCommand (String message, Client client){
 		if (message.equals("/c"))
-			message += "\u001B[32m\n" + getClients() + "\u001B[0m";
-		if (message.equals("/pig"))
-			message += "\u001B[32m\n" + pig() + "\u001B[0m";
+			message += getClients();
 		if (message.equals("/db"))
-			message += "\u001B[32m\n" + doubler() + "\u001B[0m";
+			message += doubler();
 		if (message.equals("/help"))
-			message += "\u001B[32m\n" + this.help + "\u001B[0m";
+			message += help;
+
+		if (message.contains("/pet")) {
+			message = pet(message.substring(5));
+		}
+
+		setColor(message, 'g');
 
 		return message;
 	}
@@ -189,8 +201,12 @@ public class Serveur {
 		return toReturn;
 	}
 
-	public String pig() {
-		return("pig\n    _____  \n^..^     \\9\n(oo)_____/\n    WW  WW");
+	public String pet(String pet) {
+		try {
+			return "\n" + Files.readString(Paths.get("src/ascii/" + pet));
+        }catch (Exception e) {
+			return "imposible de trouver " + pet;
+		}
 	}
 
 	public String doubler() {

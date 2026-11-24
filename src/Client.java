@@ -55,7 +55,7 @@ public class Client extends Thread
 			String message;
 			while ((message = sender.readLine()) != null)
 			{
-				deletInpute(message);
+				//deletInpute(message);
 				serveur.getNewMessage(message, this);
 			}
 
