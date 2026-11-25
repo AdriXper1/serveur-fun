@@ -1,5 +1,6 @@
 package src;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.net.*;
 import java.util.Calendar;
+import java.util.Scanner;
 
 public class Serveur {
 
@@ -22,8 +24,11 @@ public class Serveur {
 
 	private boolean runing = true;
 
-	private final String ADMINPSW = "psw";
-	private final Path SAVEFILE = Paths.get("saveFile.txt");
+	private final String ADMINPSW   = "psw";
+	private final String EMOJISPATH = "src/ascii/emojis";
+	private final Path   SAVEFILE   = Paths.get("saveFile.txt");
+
+	private String[][] emojis;
 
 	private ArrayList<Client> clients = new ArrayList<Client>();
 
@@ -36,6 +41,7 @@ public class Serveur {
 		Socket       socket       = null;
 
 		System.out.println("Démarrage du serveur " + nom);
+		setupEmojis();
 
 		try {
 			serverSocket = new ServerSocket(port);
@@ -45,7 +51,7 @@ public class Serveur {
 			System.out.printf("machine: %s\nport   : %d%n", adresse, port);
 		}
 		catch(Exception e) {
-			System.err.println(e);
+			System.err.println("can't start server\n" + e);
 		}
 
 		
@@ -55,7 +61,9 @@ public class Serveur {
 				socket = serverSocket.accept();
 				System.out.println(setColor("INFO: client " + socket.getInetAddress().getHostName() + " s'est connecté", 'w'));
 			}
-			catch (Exception e) {System.err.println(e);}
+			catch (Exception e) {
+				System.err.println("client can't connect to server\n" + e);
+			}
 
 			Client newClient = new Client(this, socket);
 
@@ -81,13 +89,21 @@ public class Serveur {
 	}
 
 	public String clean (String message, Client client){
-		message = lookupCommand(message, client);
+		if (message.startsWith("/")) {
+			message = lookupCommand(message, client);
+		}
+		else {
+			message = lookupEmoji(message);
+		}
 
 		if (client == null) {
 			message = setColor("SERVEUR: " + message, 'g');
 		}
 		else if (client.getAdresse().equals("localhost")) {
 			message = setColor(client.getAdresseNom() + ": " + message, 'r');
+		}
+		else {
+			message = client.getAdresseNom() + ": " + message;
 		}
 
 		message = addTimeStamp(message);
@@ -129,8 +145,8 @@ public class Serveur {
 		try {
 			Files.writeString(SAVEFILE, getHistoriqueChat() + message);
 		}
-		catch (IOException exception) {
-			System.out.println("can't save message to save file");
+		catch (Exception e) {
+			System.out.println("can't save message to save file\n" + e);
 		}
 	}
 
@@ -158,16 +174,50 @@ public class Serveur {
 		return false;
 	}
 
+	private void setupEmojis () {
+		try {
+			Scanner lineCounter = new Scanner(new File(EMOJISPATH));
+
+			int count = 0;
+			while (lineCounter.hasNextLine()) {
+				count++;
+				lineCounter.nextLine();
+			}
+
+			emojis = new String [count/2][2];
+
+			Scanner scanner = new Scanner(new File(EMOJISPATH));
+
+			int i = 0;
+			while (scanner.hasNextLine()) {
+				emojis[i][0] = scanner.nextLine();
+				emojis[i][1] = scanner.nextLine();
+				i++;
+			}
+		}
+		catch (Exception e) {
+			System.err.println("can load emojis file\n" + e);
+		}
+	}
+
+	public String lookupEmoji (String message) {
+		for (int i = 0; i < emojis.length; i++) {
+			message = message.replace(emojis[i][0], emojis[i][1]);
+		}
+		return message;
+	}
+
 
 	//-----------------//
 	//commandes de chat//
 	//-----------------//
 
-
+	//todo fair un fichier pour le /help
 	private final String help =	"/c\t	Utilisateurs connectés\n" +
 								"/pig\t	Affiche un cochon\n" +
 								"/db\t	Double la valeur\n" +
-								"/help\t	Affiche cette aide\n\n" +
+								"/help\t	Affiche cette aide\n" +
+								"/pet (animal)\t	Affiche un animal\n\n" +
 								"Rester simpat\n" +
 								"Bonjour, merci, s'il vous plaît, et au revoir.\n" +
 								"Restez respectueux envers les autres utilisateurs.";
@@ -176,14 +226,19 @@ public class Serveur {
 
 	public String lookupCommand (String message, Client client){
 		if (message.equals("/c"))
-			message += getClients();
+			message += "\n" + getClients();
 		if (message.equals("/db"))
-			message += doubler();
+			message += "\n" + doubler();
 		if (message.equals("/help"))
-			message += help;
+			message += "\n" + help;
 
-		if (message.contains("/pet")) {
-			message = pet(message.substring(5));
+		if (message.startsWith("/pet")) {
+			if (message.length() > 5) {
+			message = "\n" + pet(message.substring(5));
+			}
+			else {
+				message += "\nje suis cense cherche quoi ?";
+			}
 		}
 
 		setColor(message, 'g');
@@ -203,7 +258,7 @@ public class Serveur {
 
 	public String pet(String pet) {
 		try {
-			return "\n" + Files.readString(Paths.get("src/ascii/" + pet));
+			return Files.readString(Paths.get("src/ascii/pet/" + pet));
         }catch (Exception e) {
 			return "imposible de trouver " + pet;
 		}
