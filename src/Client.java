@@ -35,10 +35,19 @@ public class Client extends Thread
 
 			adresse = client.getInetAddress().getHostName();
 
+			printer.println(
+					"██████╗ ██╗███████╗███╗   ██╗██╗   ██╗███████╗███╗   ██╗██╗   ██╗███████╗\n" +
+					"██╔══██╗██║██╔════╝████╗  ██║██║   ██║██╔════╝████╗  ██║██║   ██║██╔════╝\n" +
+					"██████╔╝██║█████╗  ██╔██╗ ██║██║   ██║█████╗  ██╔██╗ ██║██║   ██║█████╗\n" +
+					"██╔══██╗██║██╔══╝  ██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║██║   ██║██╔══╝\n" +
+					"██████╔╝██║███████╗██║ ╚████║ ╚████╔╝ ███████╗██║ ╚████║╚██████╔╝███████╗\n" +
+					"╚═════╝ ╚═╝╚══════╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝"
+			);
+
 			printer.println("Bienvenue sur le serveur " + serveur.getNom());
 
 			if (adresse.equals("localhost")) {
-				printer.println("entrer le mot de passe localhost");
+				printer.println("Entrer le mot de passe localhost : ");
 				String psw = sender.readLine();
 
 				while (!serveur.checkPassworld(psw)) {
@@ -51,7 +60,7 @@ public class Client extends Thread
 			nom = sender.readLine();
 
 			while (nom.length() > 20) {
-				printer.println("Pseudo trop long, max 20 caractères");
+				printer.println("pseudo trop long, max 20 caractères");
 				nom = sender.readLine();
 			}
 
@@ -59,10 +68,11 @@ public class Client extends Thread
 			serveur.recieveFromClient(getAdresseNom() + " s'est connecté", null);
 
 			String message;
-			while ((message = sender.readLine()) != null)
+			while ((message = sender.readLine()) != null && !message.equals("/q"))
 			{
-				//deletInpute(message);
+				if (!message.isEmpty()) {
 				serveur.recieveFromClient(message, this);
+				}
 			}
 
 			deconnecte();
@@ -110,6 +120,7 @@ public class Client extends Thread
 			sender.close();
 			client.close();
 			serveur.deconnecte(this);
+			serveur.recieveFromClient(getAdresseNom() + " s'est déconnecter", null);
 		}
 		catch (Exception e) {
 			System.err.println(e);

@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.net.*;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Scanner;
 
@@ -81,14 +82,8 @@ public class Serveur {
 
 	public void recieveFromClient (String message, Client client) {
 		//interdie les caratères spéciaux
-		if (!message.chars().allMatch(c -> c > 31) || message.isEmpty()) return;
+		if (!message.chars().allMatch(c -> c > 31)) return;
 
-		message = clean(message, client);
-
-		sendToAll(message);
-	}
-
-	private String clean (String message, Client client){
 		if (message.startsWith("/")) {
 			message = lookupCommand(message, client);
 		}
@@ -96,17 +91,26 @@ public class Serveur {
 			message = lookupEmoji(message);
 		}
 
+		if (message.isEmpty()) return;
+
+		message = setType(message, client);
+		message = addTimeStamp(message);
+		sendToAll(message);
+	}
+
+	private String setType (String message, Client client){
+		//serveur
 		if (client == null) {
 			message = setColor("SERVEUR: " + message, 'g');
 		}
+		//localhost (admin)
 		else if (client.getAdresse().equals("localhost")) {
 			message = setColor(client.getAdresseNom() + ": " + message, 'r');
 		}
+		//client
 		else {
 			message = client.getAdresseNom() + ": " + message;
 		}
-
-		message = addTimeStamp(message);
 
 		return message;
 	}
@@ -116,7 +120,7 @@ public class Serveur {
 		return timeStamp + message;
 	}
 
-	private String setColor(String message, char color) {
+	private String setColor (String message, char color) {
         return switch (color) {
             case 'w' -> ("\u001B[97m" + message + "\u001B[0m");
             case 'g' -> ("\u001B[32m" + message + "\u001B[0m");
@@ -139,10 +143,6 @@ public class Serveur {
         for (Client client : clients) {
             client.toClient(message);
         }
-	}
-
-	private void sendToClinent (String message, Client client) {
-		client.toClient(message);
 	}
 
 	private void saveMessage (String message) {
@@ -218,14 +218,11 @@ public class Serveur {
 
 
 	//todo fair un fichier pour le /help
-	private final String help =	"/c\t	Utilisateurs connectés\n" +
-								"/pig\t	Affiche un cochon\n" +
+	private final String help =	"/c\t utilisateurs connectés\n" +
+								"/q\t quitée le serveur\n" +
 								"/db\t	Double la valeur\n" +
-								"/help\t	Affiche cette aide\n" +
-								"/pet (animal)\t	Affiche un animal\n\n" +
-								"Rester simpat\n" +
-								"Bonjour, merci, s'il vous plaît, et au revoir.\n" +
-								"Restez respectueux envers les autres utilisateurs.";
+								"/bet\t let's go gambling!!!\n" +
+								"/pet (animal)\t Affiche un animal\n";
 
 	private long doubler = 1;
 
@@ -239,9 +236,9 @@ public class Serveur {
 			message = "";
 			client.toClient(getClients());
 		}
-		if (message.equals("/q")) {
+		if (message.equals("/emojis")) {
 			message = "";
-			client.deconnecte();
+			client.toClient(stringEmojis());
 		}
 
 		//fun
@@ -259,16 +256,14 @@ public class Serveur {
 			}
 		}
 
-		setColor(message, 'g');
-
 		return message;
 	}
 
 	private String getClients() {
-		String toReturn = "Clients connectés :\n";
+		String toReturn = "Clients connectés :";
 
         for (Client client : this.clients) {
-			toReturn += client.getAdresseNom() + "\n";
+			toReturn += "\n" + client.getAdresseNom();
 		}
 
 		return toReturn;
@@ -286,9 +281,17 @@ public class Serveur {
 		return String.format("%d",this.doubler *= 2);
 	}
 
+	private String stringEmojis () {
+		try {
+			return Files.readString(Paths.get(EMOJISPATH));
+        }
+		catch (Exception e) {
+			return ("imposible de trouver le dossier emoji");
+		}
+	}
+
 	public void deconnecte (Client client) {
 		clients.remove(client);
-		sendToAll(client.getNom() + " s'est déconnecté");
 	}
 
 
@@ -297,7 +300,7 @@ public class Serveur {
 			new Serveur(args[0], Integer.parseInt(args[1]), args[2]);
 		}
 		catch (Exception e) {
-			System.err.println("Server nom port psw");
+			System.err.println("Server nom port psw\n" + Arrays.toString(e.getStackTrace()));
 		}
 	}
 }
