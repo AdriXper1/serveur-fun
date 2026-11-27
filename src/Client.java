@@ -7,6 +7,12 @@ import java.net.*;
 
 public class Client extends Thread 
 {
+
+
+	//-----------------------//
+	//fonctionnement generale//
+	//-----------------------//
+
 	
 	private final Serveur serveur;
 	private final Socket  client;
@@ -50,13 +56,13 @@ public class Client extends Thread
 			}
 
 			printer.println(serveur.getHistoriqueChat());
-			serveur.getNewMessage(getAdresseNom() + " s'est connecté", null);
+			serveur.recieveFromClient(getAdresseNom() + " s'est connecté", null);
 
 			String message;
 			while ((message = sender.readLine()) != null)
 			{
 				//deletInpute(message);
-				serveur.getNewMessage(message, this);
+				serveur.recieveFromClient(message, this);
 			}
 
 			deconnecte();
@@ -104,10 +110,43 @@ public class Client extends Thread
 			sender.close();
 			client.close();
 			serveur.deconnecte(this);
-			serveur.getNewMessage(getNom() + " s'est déconnecté", null);
 		}
 		catch (Exception e) {
 			System.err.println(e);
+		}
+	}
+
+
+	//-----------------//
+	//commandes de chat//
+	//-----------------//
+
+
+	private double money = 10;
+
+	public String gamble (String betS) {
+		String toReturn = "";
+		try {
+			double bet = Double.parseDouble(betS.substring(5));
+
+			if (bet <= money && bet > 0) {
+				if (Math.random() > 0.5) {
+					money += bet;
+					toReturn += "vous avez gagnee " + bet;
+				}
+				else {
+					money -= bet;
+					toReturn +=  "vous avez perdue " + bet ;
+				}
+			}
+			else {
+				toReturn += "vous etes trop pauvre";
+			}
+
+			return toReturn + "\nTotal = " + money;
+		}
+		catch (Exception e) {
+			return "tapez /bet (nombreIci)";
 		}
 	}
 }

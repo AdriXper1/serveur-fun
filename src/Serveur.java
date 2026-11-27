@@ -13,6 +13,7 @@ import java.util.Scanner;
 
 public class Serveur {
 
+
 	//-----------------------//
 	//fonctionnement generale//
 	//-----------------------//
@@ -21,21 +22,20 @@ public class Serveur {
 	private int    port;
 	private String nom;
 	private String adresse;
+	private String psw;
 
 	private boolean runing = true;
 
-	private final String ADMINPSW   = "psw";
-	private final String EMOJISPATH = "src/ascii/emojis";
 	private final Path   SAVEFILE   = Paths.get("saveFile.txt");
-
-	private String[][] emojis;
+	private final String EMOJISPATH = "src/ascii/emojis";
+	private String[][]   emojis;
 
 	private ArrayList<Client> clients = new ArrayList<Client>();
 
-	public Serveur (int port, String nom)
-	{
+	public Serveur (String nom, int port, String psw)	{
+		this.nom  = nom;
 		this.port = port;
-		this.nom = nom;
+		this.psw  = psw;
 
 		ServerSocket serverSocket = null;
 		Socket       socket       = null;
@@ -79,16 +79,16 @@ public class Serveur {
 		}
 	}
 
-	public void getNewMessage (String message, Client client){
+	public void recieveFromClient (String message, Client client) {
 		//interdie les caratères spéciaux
 		if (!message.chars().allMatch(c -> c > 31) || message.isEmpty()) return;
 
-		String cleanMessage = clean(message, client);
+		message = clean(message, client);
 
-		sendNewMessage(cleanMessage);
+		sendToAll(message);
 	}
 
-	public String clean (String message, Client client){
+	private String clean (String message, Client client){
 		if (message.startsWith("/")) {
 			message = lookupCommand(message, client);
 		}
@@ -116,32 +116,36 @@ public class Serveur {
 		return timeStamp + message;
 	}
 
-	public String setColor(String message, char color) {
-		switch (color) {
-			case 'w' : return ("\u001B[97m" + message + "\u001B[0m");
-			case 'g' : return ("\u001B[32m" + message + "\u001B[0m");
-			case 'r' : return ("\u001B[31m" + message + "\u001B[0m");
-            default  : return message;
-		}
+	private String setColor(String message, char color) {
+        return switch (color) {
+            case 'w' -> ("\u001B[97m" + message + "\u001B[0m");
+            case 'g' -> ("\u001B[32m" + message + "\u001B[0m");
+            case 'r' -> ("\u001B[31m" + message + "\u001B[0m");
+            default -> message;
+        };
 	}
 
-	public void sendNewMessage (String message) {
+	private void sendToAll (String message) {
+		sendToServeur(message);
+		sendToAllClients(message);
+	}
+
+	private void sendToServeur(String message) {
 		System.out.println(message);
-		saveMessage("\n" + message);
-		toAllClient(message);
+		saveMessage(message + "\n");
 	}
 
-	public void toServeur (String message) {
-		System.out.println(setColor(message, 'w'));
-	}
-
-	public void toAllClient (String message) {
+	private void sendToAllClients(String message) {
         for (Client client : clients) {
             client.toClient(message);
         }
 	}
 
-	public void saveMessage (String message) {
+	private void sendToClinent (String message, Client client) {
+		client.toClient(message);
+	}
+
+	private void saveMessage (String message) {
 		try {
 			Files.writeString(SAVEFILE, getHistoriqueChat() + message);
 		}
@@ -168,7 +172,7 @@ public class Serveur {
 	}
 
 	public boolean checkPassworld (String psw) {
-		if (this.ADMINPSW.equals(psw)) {
+		if (this.psw.equals(psw)) {
 			return true;
 		}
 		return false;
@@ -200,7 +204,7 @@ public class Serveur {
 		}
 	}
 
-	public String lookupEmoji (String message) {
+	private String lookupEmoji (String message) {
 		for (int i = 0; i < emojis.length; i++) {
 			message = message.replace(emojis[i][0], emojis[i][1]);
 		}
@@ -211,6 +215,7 @@ public class Serveur {
 	//-----------------//
 	//commandes de chat//
 	//-----------------//
+
 
 	//todo fair un fichier pour le /help
 	private final String help =	"/c\t	Utilisateurs connectés\n" +
@@ -224,13 +229,26 @@ public class Serveur {
 
 	private long doubler = 1;
 
-	public String lookupCommand (String message, Client client){
-		if (message.equals("/c"))
-			message += "\n" + getClients();
+	private String lookupCommand (String message, Client client){
+		//util
+		if (message.equals("/help")) {
+			message = "";
+			client.toClient(help);
+		}
+		if (message.equals("/c")) {
+			message = "";
+			client.toClient(getClients());
+		}
+		if (message.equals("/q")) {
+			message = "";
+			client.deconnecte();
+		}
+
+		//fun
 		if (message.equals("/db"))
 			message += "\n" + doubler();
-		if (message.equals("/help"))
-			message += "\n" + help;
+		if (message.startsWith("/bet"))
+			message += "\n" + (client.gamble(message));
 
 		if (message.startsWith("/pet")) {
 			if (message.length() > 5) {
@@ -246,7 +264,7 @@ public class Serveur {
 		return message;
 	}
 
-	public String getClients() {
+	private String getClients() {
 		String toReturn = "Clients connectés :\n";
 
         for (Client client : this.clients) {
@@ -256,7 +274,7 @@ public class Serveur {
 		return toReturn;
 	}
 
-	public String pet(String pet) {
+	private String pet(String pet) {
 		try {
 			return Files.readString(Paths.get("src/ascii/pet/" + pet));
         }catch (Exception e) {
@@ -264,16 +282,22 @@ public class Serveur {
 		}
 	}
 
-	public String doubler() {
+	private String doubler() {
 		return String.format("%d",this.doubler *= 2);
 	}
 
 	public void deconnecte (Client client) {
 		clients.remove(client);
+		sendToAll(client.getNom() + " s'est déconnecté");
 	}
 
 
 	static void main(String[] args) {
-		new Serveur(9002, "chat IUT info");
+		try {
+			new Serveur(args[0], Integer.parseInt(args[1]), args[2]);
+		}
+		catch (Exception e) {
+			System.err.println("Server nom port psw");
+		}
 	}
 }
