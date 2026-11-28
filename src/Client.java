@@ -30,18 +30,19 @@ public class Client extends Thread
 
 	public void run() {
 		try {
-			printer = new PrintWriter   (client.getOutputStream(), true); // Envoyer
-			sender  = new BufferedReader(new InputStreamReader(client.getInputStream())); // Recevoir
+			printer = new PrintWriter   (client.getOutputStream(), true);        //Envois au client
+			sender  = new BufferedReader(new InputStreamReader(client.getInputStream())); //Envois au serveur
 
 			adresse = client.getInetAddress().getHostName();
 
 			printer.println(
-					"██████╗ ██╗███████╗███╗   ██╗██╗   ██╗███████╗███╗   ██╗██╗   ██╗███████╗\n" +
-					"██╔══██╗██║██╔════╝████╗  ██║██║   ██║██╔════╝████╗  ██║██║   ██║██╔════╝\n" +
-					"██████╔╝██║█████╗  ██╔██╗ ██║██║   ██║█████╗  ██╔██╗ ██║██║   ██║█████╗\n" +
-					"██╔══██╗██║██╔══╝  ██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║██║   ██║██╔══╝\n" +
-					"██████╔╝██║███████╗██║ ╚████║ ╚████╔╝ ███████╗██║ ╚████║╚██████╔╝███████╗\n" +
-					"╚═════╝ ╚═╝╚══════╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝"
+				"""
+				██████╗ ██╗███████╗███╗   ██╗██╗   ██╗███████╗███╗   ██╗██╗   ██╗███████╗
+				██╔══██╗██║██╔════╝████╗  ██║██║   ██║██╔════╝████╗  ██║██║   ██║██╔════╝
+				██████╔╝██║█████╗  ██╔██╗ ██║██║   ██║█████╗  ██╔██╗ ██║██║   ██║█████╗
+				██╔══██╗██║██╔══╝  ██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║██║   ██║██╔══╝
+				██████╔╝██║███████╗██║ ╚████║ ╚████╔╝ ███████╗██║ ╚████║╚██████╔╝███████╗
+				╚═════╝ ╚═╝╚══════╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝"""
 			);
 
 			printer.println("Bienvenue sur le serveur " + serveur.getNom());
@@ -78,7 +79,7 @@ public class Client extends Thread
 			deconnecte();
 		}
 		catch(Exception e) {
-			System.err.println(e);
+			System.err.println("Erreur avec un client\n" + e);
 		}
 	}
 
@@ -104,14 +105,6 @@ public class Client extends Thread
 
 	public String getAdresseNom() {
 		return ("(" + adresse.replace(".iut.univ-lehavre.fr", "") + ") " + nom);
-	}
-
-	public Socket getSocket() {
-		return client;
-	}
-
-	public BufferedReader getBufferedReader() {
-		return sender;
 	}
 
 	public void deconnecte() {

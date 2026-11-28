@@ -20,10 +20,9 @@ public class Serveur {
 	//-----------------------//
 
 
-	private int    port;
-	private String nom;
-	private String adresse;
-	private String psw;
+	private final int    port;
+	private final String nom;
+    private final String psw;
 
 	private boolean runing = true;
 
@@ -31,7 +30,7 @@ public class Serveur {
 	private final String EMOJISPATH = "src/ascii/emojis";
 	private String[][]   emojis;
 
-	private ArrayList<Client> clients = new ArrayList<Client>();
+	private final ArrayList<Client> clients = new ArrayList<>();
 
 	public Serveur (String nom, int port, String psw)	{
 		this.nom  = nom;
@@ -46,7 +45,7 @@ public class Serveur {
 
 		try {
 			serverSocket = new ServerSocket(port);
-			adresse = InetAddress.getLocalHost().getHostName();
+            String adresse = InetAddress.getLocalHost().getHostName();
 
 			System.out.println("serveur démarré avec succès");
 			System.out.printf("machine: %s\nport   : %d%n", adresse, port);
@@ -55,11 +54,12 @@ public class Serveur {
 			System.err.println("can't start server\n" + e);
 		}
 
-		
+
 		while (runing)
 		{
 			try {
-				socket = serverSocket.accept();
+                assert serverSocket != null;
+                socket = serverSocket.accept();
 				System.out.println(setColor("INFO: client " + socket.getInetAddress().getHostName() + " s'est connecté", 'w'));
 			}
 			catch (Exception e) {
@@ -73,10 +73,11 @@ public class Serveur {
 		}
 
 		try {
-			serverSocket.close();
+            assert serverSocket != null;
+            serverSocket.close();
         }
 		catch (Exception e) {
-			System.err.println(e);
+			System.err.println("Fermeture échoue avec succès\n" + e);
 		}
 	}
 
@@ -172,11 +173,8 @@ public class Serveur {
 	}
 
 	public boolean checkPassworld (String psw) {
-		if (this.psw.equals(psw)) {
-			return true;
-		}
-		return false;
-	}
+        return this.psw.equals(psw);
+    }
 
 	private void setupEmojis () {
 		try {
@@ -205,9 +203,9 @@ public class Serveur {
 	}
 
 	private String lookupEmoji (String message) {
-		for (int i = 0; i < emojis.length; i++) {
-			message = message.replace(emojis[i][0], emojis[i][1]);
-		}
+        for (String[] emoji : emojis) {
+            message = message.replace(emoji[0], emoji[1]);
+        }
 		return message;
 	}
 
